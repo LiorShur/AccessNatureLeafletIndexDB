@@ -238,10 +238,6 @@ function resumeTimer() {
   }
 }
 
-// function pad(n) {
-//   return n.toString().padStart(2, "0");
-// }
-
 // === DISTANCE ===
 function haversineDistance(coord1, coord2) {
   const R = 6371;
