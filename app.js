@@ -1308,56 +1308,183 @@ function toggleArchivePanel() {
   }
 }
 
+// const SummaryArchive = (() => {
+//   const STORAGE_KEY = "summary_archive";
+
+//   function getArchive() {
+//     return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+//   }
+
+//   function saveToArchive(name, htmlContent, media = {}) {
+//     const archive = getArchive();
+//     archive.push({
+//       id: Date.now(),
+//       name,
+//       date: new Date().toISOString(),
+//       html: htmlContent,
+//       media
+//     });
+//     localStorage.setItem(STORAGE_KEY, JSON.stringify(archive));
+//     alert("✅ Route summary saved to archive!");
+//   }
+
+//   function listSummaries() {
+//     return getArchive();
+//   }
+
+//   function deleteSummary(id) {
+//   const confirmed = confirm("🗑️ Are you sure you want to delete this route summary?");
+//   if (!confirmed) return;
+
+//   const archive = getArchive();
+//   const updatedArchive = archive.filter(item => item.id !== id);
+//   localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedArchive));
+
+//   // Smooth fade-out effect
+//   const container = document.getElementById("archivePanel");
+//   if (container) {
+//     const listItems = container.querySelectorAll("li");
+//     listItems.forEach(li => {
+//       if (li.innerHTML.includes(`SummaryArchive.deleteSummary(${id})`)) {
+//         li.classList.add("fade-out", "remove");
+//         setTimeout(() => {
+//           li.remove();
+//           if (container.querySelectorAll("li").length === 0) {
+//             showArchiveBrowser(); // rebuild the empty UI
+//           }
+//         }, 500);
+//       }
+//     });
+//   }
+// }
+
+import {
+  dbAdd,
+  dbGetAll,
+  dbDelete,
+  STORE_NAMES
+} from './db.js'; // Adjust path as needed
+
 const SummaryArchive = (() => {
-  const STORAGE_KEY = "summary_archive";
-
-  function getArchive() {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
-  }
-
   function saveToArchive(name, htmlContent, media = {}) {
-    const archive = getArchive();
-    archive.push({
+    const summary = {
       id: Date.now(),
       name,
       date: new Date().toISOString(),
       html: htmlContent,
       media
-    });
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(archive));
-    alert("✅ Route summary saved to archive!");
+    };
+
+    dbAdd(STORE_NAMES.ARCHIVE, summary)
+      .then(() => {
+        alert("✅ Route summary saved to archive!");
+      })
+      .catch(err => {
+        console.error("❌ Failed to save summary:", err);
+        alert("❌ Failed to save route summary.");
+      });
   }
 
-  function listSummaries() {
-    return getArchive();
+  async function listSummaries() {
+    return await dbGetAll(STORE_NAMES.ARCHIVE);
   }
 
   function deleteSummary(id) {
-  const confirmed = confirm("🗑️ Are you sure you want to delete this route summary?");
-  if (!confirmed) return;
+    const confirmed = confirm("🗑️ Are you sure you want to delete this route summary?");
+    if (!confirmed) return;
 
-  const archive = getArchive();
-  const updatedArchive = archive.filter(item => item.id !== id);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedArchive));
-
-  // Smooth fade-out effect
-  const container = document.getElementById("archivePanel");
-  if (container) {
-    const listItems = container.querySelectorAll("li");
-    listItems.forEach(li => {
-      if (li.innerHTML.includes(`SummaryArchive.deleteSummary(${id})`)) {
-        li.classList.add("fade-out", "remove");
-        setTimeout(() => {
-          li.remove();
-          if (container.querySelectorAll("li").length === 0) {
-            showArchiveBrowser(); // rebuild the empty UI
-          }
-        }, 500);
-      }
-    });
+    dbDelete(STORE_NAMES.ARCHIVE, id)
+      .then(() => {
+        const container = document.getElementById("archivePanel");
+        if (container) {
+          const listItems = container.querySelectorAll("li");
+          listItems.forEach(li => {
+            if (li.innerHTML.includes(`SummaryArchive.deleteSummary(${id})`)) {
+              li.classList.add("fade-out", "remove");
+              setTimeout(() => {
+                li.remove();
+                if (container.querySelectorAll("li").length === 0) {
+                  showArchiveBrowser();
+                }
+              }, 500);
+            }
+          });
+        }
+      })
+      .catch(err => {
+        console.error("❌ Failed to delete summary:", err);
+        alert("❌ Could not delete the summary.");
+      });
   }
-}
 
+  function viewSummary(id) {
+    dbGetAll(STORE_NAMES.ARCHIVE)
+      .then(archive => {
+        const item = archive.find(e => e.id === id);
+        if (!item) return alert("Summary not found!");
+
+        const blob = new Blob([item.html], { type: "text/html" });
+        const url = URL.createObjectURL(blob);
+        window.open(url, "_blank");
+      })
+      .catch(err => {
+        console.error("❌ Could not load summary:", err);
+      });
+  }
+
+  function clearAll() {
+    const confirmClear = confirm("⚠️ This will delete all saved summaries permanently. Continue?");
+    if (!confirmClear) return;
+
+    dbClearStore(STORE_NAMES.ARCHIVE)
+      .then(() => {
+        showArchiveBrowser();
+        alert("🧹 Archive cleared!");
+        toggleArchivePanel();
+      })
+      .catch(err => {
+        console.error("❌ Failed to clear archive store:", err);
+        alert("⚠️ Could not clear archive.");
+      });
+  }
+
+  function showArchiveBrowser(containerId = "archivePanel") {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    dbGetAll(STORE_NAMES.ARCHIVE)
+      .then(archive => {
+        container.innerHTML = "<h3>📜 Saved Route Summaries</h3>";
+
+        if (archive.length === 0) {
+          container.innerHTML += "<p>No summaries found.</p>";
+          return;
+        }
+
+        const ul = document.createElement("ul");
+        archive.forEach(item => {
+          const li = document.createElement("li");
+          li.innerHTML = `
+            <b>${item.name}</b> (${item.date.split("T")[0]})
+            <button onclick="SummaryArchive.viewSummary(${item.id})">View</button>
+            <button onclick="SummaryArchive.deleteSummary(${item.id})">🗑️ Delete</button>
+          `;
+          ul.appendChild(li);
+        });
+
+        container.appendChild(ul);
+      });
+  }
+
+  return {
+    saveToArchive,
+    listSummaries,
+    viewSummary,
+    deleteSummary,
+    showArchiveBrowser,
+    clearAll
+  };
+})();
 
   function viewSummary(id) {
     const item = getArchive().find(entry => entry.id === id);
@@ -1970,26 +2097,64 @@ function prepareAndExport() {
   });
 }
 
+// function clearAllAppData() {
+//   const confirmClear = confirm("⚠️ This will permanently delete all routes, summaries, and backups. Continue?");
+//   if (!confirmClear) return;
+
+//   localStorage.removeItem("sessions");
+//   localStorage.removeItem("summary_archive");
+//   localStorage.removeItem("route_backup");
+
+//   if (document.getElementById("historyList")) {
+//     document.getElementById("historyList").innerHTML = "";
+//   }
+
+//   if (typeof SummaryArchive !== "undefined") {
+//     SummaryArchive.showArchiveBrowser(); // refresh if visible
+//   }
+
+//   loadSavedSessions();
+
+//   alert("✅ All app data has been cleared!");
+// }
+
+import {
+  STORE_NAMES,
+  dbClearStore
+} from './db.js'; // adjust the path as needed
+
 function clearAllAppData() {
   const confirmClear = confirm("⚠️ This will permanently delete all routes, summaries, and backups. Continue?");
   if (!confirmClear) return;
 
-  localStorage.removeItem("sessions");
-  localStorage.removeItem("summary_archive");
-  localStorage.removeItem("route_backup");
+  // Clear IndexedDB data
+  Promise.all([
+    dbClearStore(STORE_NAMES.SESSIONS),
+    dbClearStore(STORE_NAMES.MEDIA),
+    dbClearStore(STORE_NAMES.ARCHIVE)
+  ])
+    .then(() => {
+      // Optionally remove any remaining localStorage keys if used
+      localStorage.removeItem("route_backup");
 
-  if (document.getElementById("historyList")) {
-    document.getElementById("historyList").innerHTML = "";
-  }
+      // Clear UI elements
+      const historyList = document.getElementById("historyList");
+      if (historyList) historyList.innerHTML = "";
 
-  if (typeof SummaryArchive !== "undefined") {
-    SummaryArchive.showArchiveBrowser(); // refresh if visible
-  }
+      if (typeof SummaryArchive !== "undefined") {
+        SummaryArchive.showArchiveBrowser(); // refresh UI
+      }
 
-  loadSavedSessions();
+      loadSavedSessions(); // repopulate list
 
-  alert("✅ All app data has been cleared!");
+      alert("✅ All app data has been cleared!");
+    })
+    .catch(err => {
+      console.error("❌ Failed to clear IndexedDB stores:", err);
+      alert("⚠️ Something went wrong while clearing data.");
+    });
 }
+
 let wasTimerRunning = false;
 
 function promptAccessibilityForm(callback) {
