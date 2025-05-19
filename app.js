@@ -792,58 +792,91 @@ window.saveSession = async function () {
 
 
 // === LOAD SESSION LIST ===
-window.loadSavedSessions = function () {
-  const list = document.getElementById("savedSessionsList");
-  list.innerHTML = "";
-  const sessions = JSON.parse(localStorage.getItem("sessions") || "[]");
+// window.loadSavedSessions = function () {
+//   const list = document.getElementById("savedSessionsList");
+//   list.innerHTML = "";
+//   const sessions = JSON.parse(localStorage.getItem("sessions") || "[]");
 
-  sessions.forEach((session, index) => {
-    const li = document.createElement("li");
-    li.innerHTML = `
-      <strong>${session.name}</strong>
-      <button id=loadSessionBtn" onclick="loadSession(${index})">View</button>
-    `;
-    list.appendChild(li);
-  });
+//   sessions.forEach((session, index) => {
+//     const li = document.createElement("li");
+//     li.innerHTML = `
+//       <strong>${session.name}</strong>
+//       <button id=loadSessionBtn" onclick="loadSession(${index})">View</button>
+//     `;
+//     list.appendChild(li);
+//   });
+// };
+
+import {
+  STORE_NAMES,
+  dbGetAll
+} from './db.js'; // ✅ adjust import path as needed
+
+window.loadSavedSessions = async function () {
+  const list = document.getElementById("savedSessionsList");
+  if (!list) return;
+
+  list.innerHTML = "";
+
+  try {
+    const sessions = await dbGetAll(STORE_NAMES.SESSIONS);
+
+    sessions.forEach((session, index) => {
+      const li = document.createElement("li");
+      li.innerHTML = `
+        <strong>${session.name}</strong>
+        <button onclick="loadSession(${session.id})">View</button>
+      `;
+      list.appendChild(li);
+    });
+
+    if (sessions.length === 0) {
+      list.innerHTML = "<p>No saved routes found.</p>";
+    }
+
+  } catch (error) {
+    console.error("❌ Failed to load sessions from IndexedDB:", error);
+    list.innerHTML = "<p>⚠️ Failed to load saved sessions.</p>";
+  }
 };
 
 // === LOAD A SESSION ===
 
-window.loadSession = function (index) {
-  const sessions = JSON.parse(localStorage.getItem("sessions") || "[]");
-  const session = sessions[index];
+// window.loadSession = function (index) {
+//   const sessions = JSON.parse(localStorage.getItem("sessions") || "[]");
+//   const session = sessions[index];
 
-  if (!session || !session.data || session.data.length === 0) {
-    alert("❌ This session has no data to export.");
-    return;
-  }
+//   if (!session || !session.data || session.data.length === 0) {
+//     alert("❌ This session has no data to export.");
+//     return;
+//   }
 
-  routeData = session.data;
-  totalDistance = parseFloat(session.distance);
-  elapsedTime = 0;
-  lastCoords = null;
+//   routeData = session.data;
+//   totalDistance = parseFloat(session.distance);
+//   elapsedTime = 0;
+//   lastCoords = null;
 
-  path = routeData.filter(e => e.type === "location").map(e => e.coords);
+//   path = routeData.filter(e => e.type === "location").map(e => e.coords);
 
-  document.getElementById("timer").textContent = session.time;
-  document.getElementById("distance").textContent = totalDistance.toFixed(2) + " km";
-  //document.getElementById("liveDistance").textContent = totalDistance.toFixed(2) + " km";
+//   document.getElementById("timer").textContent = session.time;
+//   document.getElementById("distance").textContent = totalDistance.toFixed(2) + " km";
+//   //document.getElementById("liveDistance").textContent = totalDistance.toFixed(2) + " km";
 
-  const accessibilityEntry = session.data.find(e => e.type === "accessibility");
-  if (accessibilityEntry) {
-  prefillAccessibilityForm(accessibilityEntry.content);
-  }
+//   const accessibilityEntry = session.data.find(e => e.type === "accessibility");
+//   if (accessibilityEntry) {
+//   prefillAccessibilityForm(accessibilityEntry.content);
+//   }
 
-  initMap(() => {
-    drawSavedRoutePath();
-    showRouteDataOnMap();
-    setTrackingButtonsEnabled(false);
+//   initMap(() => {
+//     drawSavedRoutePath();
+//     showRouteDataOnMap();
+//     setTrackingButtonsEnabled(false);
 
-    //disableStartButton();
-  });
+//     //disableStartButton();
+//   });
 
-  //document.getElementById("exportSummaryBtn").disabled = false;
-};
+//   //document.getElementById("exportSummaryBtn").disabled = false;
+// };
 
 // === LOAD SESSION + IndexDB===
 // window.loadSession = async function (index) {
@@ -887,6 +920,62 @@ window.loadSession = function (index) {
 //   //document.getElementById("exportSummaryBtn").disabled = false;
 // };
 
+import {
+  STORE_NAMES,
+  dbGet,
+  dbGetMedia
+} from './db.js'; // adjust path if needed
+
+window.loadSession = async function (id) {
+  try {
+    const session = await dbGet(STORE_NAMES.SESSIONS, id);
+
+    if (!session || !Array.isArray(session.data) || session.data.length === 0) {
+      alert("❌ This session has no data to load.");
+      return;
+    }
+
+    routeData = [];
+
+    for (const entry of session.data) {
+      if (entry.mediaId) {
+        try {
+          const base64 = await dbGetMedia(entry.mediaId);
+          routeData.push({ ...entry, content: base64 });
+        } catch (err) {
+          console.warn(`⚠️ Media not found for ID: ${entry.mediaId}`, err);
+          routeData.push({ ...entry, content: null });
+        }
+      } else {
+        routeData.push(entry);
+      }
+    }
+
+    totalDistance = parseFloat(session.distance);
+    elapsedTime = 0;
+    lastCoords = null;
+
+    path = routeData.filter(e => e.type === "location").map(e => e.coords);
+
+    document.getElementById("timer").textContent = session.time;
+    document.getElementById("distance").textContent = totalDistance.toFixed(2) + " km";
+
+    const accessibilityEntry = routeData.find(e => e.type === "accessibility");
+    if (accessibilityEntry) {
+      prefillAccessibilityForm(accessibilityEntry.content);
+    }
+
+    initMap(() => {
+      drawSavedRoutePath();
+      showRouteDataOnMap();
+      setTrackingButtonsEnabled(false);
+    });
+
+  } catch (e) {
+    console.error("❌ Failed to load session from IndexedDB:", e);
+    alert("❌ Unable to load session.");
+  }
+};
 
 function drawSavedRoutePath() {
   if (!map || path.length === 0) return;
@@ -906,39 +995,96 @@ function drawSavedRoutePath() {
   }
 }
 
-function loadMostRecentSession(callback) {
-  const sessions = JSON.parse(localStorage.getItem("sessions") || "[]");
-  if (sessions.length === 0) {
-    alert("❌ No saved sessions found to export.");
-    return;
-  }
+// function loadMostRecentSession(callback) {
+//   const sessions = JSON.parse(localStorage.getItem("sessions") || "[]");
+//   if (sessions.length === 0) {
+//     alert("❌ No saved sessions found to export.");
+//     return;
+//   }
 
-  const mostRecent = sessions[sessions.length - 1];
-  routeData = mostRecent.data;
-  totalDistance = parseFloat(mostRecent.distance);
-  elapsedTime = 0;
+//   const mostRecent = sessions[sessions.length - 1];
+//   routeData = mostRecent.data;
+//   totalDistance = parseFloat(mostRecent.distance);
+//   elapsedTime = 0;
 
-  path = routeData.filter(e => e.type === "location").map(e => e.coords);
+//   path = routeData.filter(e => e.type === "location").map(e => e.coords);
 
-  // Update UI
-  document.getElementById("timer").textContent = mostRecent.time;
-  document.getElementById("distance").textContent = totalDistance.toFixed(2) + " km";
-  //document.getElementById("liveTimer").textContent = mostRecent.time;
-  //document.getElementById("liveDistance").textContent = totalDistance.toFixed(2) + " km";
+//   // Update UI
+//   document.getElementById("timer").textContent = mostRecent.time;
+//   document.getElementById("distance").textContent = totalDistance.toFixed(2) + " km";
+//   //document.getElementById("liveTimer").textContent = mostRecent.time;
+//   //document.getElementById("liveDistance").textContent = totalDistance.toFixed(2) + " km";
 
-  if (typeof initMap === "function") {
-    initMap(() => {
-      drawSavedRoutePath();
-      showRouteDataOnMap();
-      setTrackingButtonsEnabled(false);
+//   if (typeof initMap === "function") {
+//     initMap(() => {
+//       drawSavedRoutePath();
+//       showRouteDataOnMap();
+//       setTrackingButtonsEnabled(false);
 
-      //disableStartButton();
-      if (typeof callback === "function") callback();
-    });
-  } else if (typeof callback === "function") {
-    callback(); // proceed even if map doesn't load
+//       //disableStartButton();
+//       if (typeof callback === "function") callback();
+//     });
+//   } else if (typeof callback === "function") {
+//     callback(); // proceed even if map doesn't load
+//   }
+// }
+
+import {
+  STORE_NAMES,
+  dbGetAll,
+  dbGetMedia
+} from './db.js'; // adjust the path as needed
+
+async function loadMostRecentSession(callback) {
+  try {
+    const sessions = await dbGetAll(STORE_NAMES.SESSIONS);
+    if (!sessions || sessions.length === 0) {
+      alert("❌ No saved sessions found to export.");
+      return;
+    }
+
+    const mostRecent = sessions[sessions.length - 1];
+    routeData = [];
+
+    for (const entry of mostRecent.data) {
+      if (entry.mediaId) {
+        try {
+          const base64 = await dbGetMedia(entry.mediaId);
+          routeData.push({ ...entry, content: base64 });
+        } catch {
+          routeData.push({ ...entry, content: null });
+        }
+      } else {
+        routeData.push(entry);
+      }
+    }
+
+    totalDistance = parseFloat(mostRecent.distance);
+    elapsedTime = 0;
+    path = routeData.filter(e => e.type === "location").map(e => e.coords);
+
+    // Update UI
+    document.getElementById("timer").textContent = mostRecent.time;
+    document.getElementById("distance").textContent = totalDistance.toFixed(2) + " km";
+
+    if (typeof initMap === "function") {
+      initMap(() => {
+        drawSavedRoutePath();
+        showRouteDataOnMap();
+        setTrackingButtonsEnabled(false);
+
+        if (typeof callback === "function") callback();
+      });
+    } else if (typeof callback === "function") {
+      callback();
+    }
+
+  } catch (e) {
+    console.error("❌ Failed to load most recent session:", e);
+    alert("⚠️ Could not load recent route.");
   }
 }
+
 
 function toggleExportDropdown() {
   const dropdown = document.getElementById("exportDropdown");
@@ -1222,15 +1368,46 @@ const SummaryArchive = (() => {
     window.open(url, "_blank");
   }
 
-  function clearAll() {
-    const confirmClear = confirm("⚠️ This will delete all saved summaries permanently. Continue?");
-    if (confirmClear) {
-      localStorage.removeItem(STORAGE_KEY);
-      showArchiveBrowser();
-      alert("🧹 Archive cleared!");
-      toggleArchivePanel();
-    }
+  // function clearAll() {
+  //   const confirmClear = confirm("⚠️ This will delete all saved summaries permanently. Continue?");
+  //   if (confirmClear) {
+  //     localStorage.removeItem(STORAGE_KEY);
+  //     showArchiveBrowser();
+  //     alert("🧹 Archive cleared!");
+  //     toggleArchivePanel();
+  //   }
+  // }
+
+  import {
+  STORE_NAMES,
+  dbClearStore
+} from './db.js'; // adjust path as necessary
+
+async function clearAllSessions() {
+  const confirmClear = confirm("⚠️ Are you sure you want to clear all saved routes? This cannot be undone!");
+
+  if (!confirmClear) return;
+
+  try {
+    await dbClearStore(STORE_NAMES.SESSIONS);
+    await dbClearStore(STORE_NAMES.MEDIA);
+
+    // Optionally clear any localStorage backups if still used
+    localStorage.removeItem("route_backup");
+
+    // Clear UI
+    const historyList = document.getElementById("historyList");
+    if (historyList) historyList.innerHTML = "";
+
+    loadSavedSessions(); // Will now show empty state
+
+    alert("✅ All saved routes have been cleared!");
+  } catch (e) {
+    console.error("❌ Failed to clear sessions or media:", e);
+    alert("⚠️ Something went wrong while clearing the data.");
   }
+}
+
 
   function showArchiveBrowser(containerId = "archivePanel") {
     const container = document.getElementById(containerId);
