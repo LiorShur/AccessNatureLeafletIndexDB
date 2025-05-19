@@ -13,7 +13,7 @@ import {
 } from './db.js';
 
 
-await dbPut(STORE_NAMES.SESSIONS, sessionObject);
+//await dbPut(STORE_NAMES.SESSIONS, sessionObject);
 const allSessions = await dbGetAll(STORE_NAMES.SESSIONS);
 
 // === GLOBAL VARIABLES ===
