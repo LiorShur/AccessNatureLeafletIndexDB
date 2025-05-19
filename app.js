@@ -606,9 +606,9 @@ window.addEventListener("DOMContentLoaded", () => {
   });
 });
 
-function openAccessibilityForm() {
-  document.getElementById("accessibilityOverlay").style.display = "flex";
-}
+// function openAccessibilityForm() {
+//   document.getElementById("accessibilityOverlay").style.display = "flex";
+// }
 
 function closeAccessibilityForm() {
   document.getElementById("accessibilityOverlay").style.display = "none";
