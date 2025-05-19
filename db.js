@@ -97,6 +97,38 @@ async function dbClear(storeName) {
   });
 }
 
+function dbAdd(storeName, value, key = null) {
+  return openDB().then(db => {
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(storeName, "readwrite");
+      const store = tx.objectStore(storeName);
+      const request = key ? store.add(value, key) : store.add(value);
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  });
+}
+
+function dbClearStore(storeName) {
+  return openDB().then(db => {
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(storeName, "readwrite");
+      const store = tx.objectStore(storeName);
+      const request = store.clear();
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  });
+}
+
+function dbGetMedia(id) {
+  return dbGet(STORE_NAMES.MEDIA, id).then(record => {
+    if (!record) throw new Error(`Media not found: ${id}`);
+    return record.data;
+  });
+}
+
+
 // === Exports ===
 export {
   STORE_NAMES,
@@ -104,5 +136,8 @@ export {
   dbGet,
   dbGetAll,
   dbDelete,
-  dbClear
+  dbClear,
+  dbAdd,
+  dbClearStore,
+  dbGetMedia
 };
