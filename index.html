@@ -7,8 +7,25 @@
   <title>Access Nature</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
   <script src="https://cdn.jsdelivr.net/npm/jszip@3.7.1/dist/jszip.min.js"></script>
+  <script type="module" src="storageMonitor.js"></script>
   <link rel="stylesheet" href="styles.css" />
 </head>
+  <div id="storageStatus" style="
+  position: fixed;
+  bottom: 10px;
+  right: 10px;
+  background: rgba(0,0,0,0.8);
+  color: white;
+  font-family: monospace;
+  font-size: 12px;
+  padding: 10px;
+  border-radius: 6px;
+  z-index: 9999;
+  line-height: 1.5;
+">
+  📦 Checking storage...
+</div>
+
 <body>
   <header id="header">
     <h1>🌿 Access Nature 🌿</h1>
