@@ -1,3 +1,15 @@
+import {
+  STORE_NAMES,
+  dbPut,
+  dbGet,
+  dbGetAll,
+  dbDelete,
+  dbClear
+} from './db.js';
+
+await dbPut(STORE_NAMES.SESSIONS, sessionObject);
+const allSessions = await dbGetAll(STORE_NAMES.SESSIONS);
+
 // === GLOBAL VARIABLES ===
 let map, marker, watchId;
 let path = [];
@@ -720,10 +732,15 @@ window.addEventListener("beforeunload", function (e) {
   }
 });
 
-window.saveSession = function () {
+import {
+  STORE_NAMES,
+  dbPut
+} from './db.js'; // ✅ adjust path if needed
+
+window.saveSession = async function () {
   console.log("🔍 Attempting to save session...");
 
-    if (!routeData || routeData.length === 0) {
+  if (!routeData || routeData.length === 0) {
     alert("⚠️ No route data to save.");
     return false;
   }
@@ -731,18 +748,30 @@ window.saveSession = function () {
   const name = prompt("Enter a name for this route:");
   if (!name) return false;
 
+  // Clone routeData to avoid modifying original in memory
+  const sessionData = JSON.parse(JSON.stringify(routeData));
+
+  // Save media separately and remove base64 from main data
+  for (let i = 0; i < sessionData.length; i++) {
+    const entry = sessionData[i];
+    if (["photo", "audio", "video"].includes(entry.type) && entry.content) {
+      const mediaId = `media_${Date.now()}_${i}`;
+      await dbPut(STORE_NAMES.MEDIA, { id: mediaId, data: entry.content });
+      entry.mediaId = mediaId;
+      delete entry.content;
+    }
+  }
+
   const session = {
     name,
     date: new Date().toISOString(),
     time: document.getElementById("timer").textContent,
     distance: totalDistance.toFixed(2),
-    data: routeData
+    data: sessionData
   };
 
   try {
-    const sessions = JSON.parse(localStorage.getItem("sessions") || "[]");
-    sessions.push(session);
-    localStorage.setItem("sessions", JSON.stringify(sessions));
+    await dbPut(STORE_NAMES.SESSIONS, session);
     localStorage.removeItem("route_backup");
 
     alert(`✅ Route saved successfully!
@@ -751,99 +780,15 @@ window.saveSession = function () {
 📏 Distance: ${totalDistance.toFixed(2)} km
 ⏱️ Time: ${document.getElementById("timer").textContent}`);
     document.getElementById("resetBtn").disabled = false;
-    loadSavedSessions();
+
+    loadSavedSessions(); // You may want to adapt this too later
     return true;
   } catch (e) {
     console.error("❌ Save failed:", e);
     alert("❌ Could not save the route.");
     return false;
   }
-  document.getElementById("resetBtn").disabled = false;
-  initMap();
 };
-
-// window.saveSession = function () {
-//   console.log("🔍 Attempting to save session...");
-
-//   if (!routeData || routeData.length === 0) {
-//     alert("⚠️ No route data to save. Please start tracking before saving.");
-//     console.warn("❌ Save aborted: routeData is empty.");
-//     return;
-//   }
-
-//   const name = prompt("Enter a name for this route:");
-//   if (!name) {
-//     console.log("⛔ Save cancelled — no name provided.");
-//     return;
-//   }
-
-//   const session = {
-//     name,
-//     date: new Date().toISOString(),
-//     time: document.getElementById("timer").textContent,
-//     distance: totalDistance.toFixed(2),
-//     data: routeData
-//   };
-
-//   // ⚠️ Estimate session size
-//   const estimatedSizeKB = new Blob([JSON.stringify(session)]).size / 1024;
-//   console.log("Estimated session size:", estimatedSizeKB.toFixed(2), "KB");
-//   if (estimatedSizeKB > 4500) {
-//     alert("⚠️ This route is too large to save in local storage. Please export or reduce media.");
-//     return;
-//   }
-
-//   // 🌐 Save large media to IndexedDB
-//   const indexedDBRequest = indexedDB.open("RouteMediaDB", 1);
-
-//   indexedDBRequest.onupgradeneeded = function (event) {
-//     const db = event.target.result;
-//     if (!db.objectStoreNames.contains("media")) {
-//       db.createObjectStore("media", { keyPath: "id" });
-//     }
-//   };
-
-//   indexedDBRequest.onsuccess = function (event) {
-//     const db = event.target.result;
-//     const tx = db.transaction("media", "readwrite");
-//     const store = tx.objectStore("media");
-
-//     routeData.forEach((entry, i) => {
-//       if (["photo", "audio", "video"].includes(entry.type)) {
-//         const id = `media_${Date.now()}_${i}`;
-//         store.put({ id, data: entry.content });
-//         entry.mediaId = id;
-//         delete entry.content;  // Detach base64
-//       }
-//     });
-
-//     tx.oncomplete = function () {
-//       try {
-//         const sessions = JSON.parse(localStorage.getItem("sessions") || "[]");
-//         sessions.push(session);
-//         localStorage.setItem("sessions", JSON.stringify(sessions));
-//         localStorage.removeItem("route_backup");
-
-//         alert("✅ Route saved successfully!");
-//         loadSavedSessions();
-//       } catch (e) {
-//         console.error("❌ Save failed. Possibly storage is full or corrupted:", e);
-//         alert("❌ Could not save the route. Try exporting or clearing older data.");
-//       }
-//     };
-
-//     tx.onerror = function (e) {
-//       console.error("❌ IndexedDB transaction failed", e);
-//     };
-//   };
-
-//   indexedDBRequest.onerror = function (e) {
-//     console.error("❌ Failed to open IndexedDB", e);
-//     alert("❌ Failed to open local database for saving media.");
-//   };
-//   document.getElementById("resetBtn").disabled = false;
-//   initMap();
-// };
 
 
 // === LOAD SESSION LIST ===
