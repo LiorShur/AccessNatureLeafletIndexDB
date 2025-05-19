@@ -1077,6 +1077,7 @@ window.onload = async function () {
       e.returnValue = '';
     }
   });
+  renderStoragePanel(); // floating display starts updating
 
   const params = new URLSearchParams(window.location.search);
   const base64Data = params.get("data");
