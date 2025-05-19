@@ -1,3 +1,5 @@
+import { renderStoragePanel } from './storageMonitor.js';
+
 import {
   STORE_NAMES,
   dbPut,
