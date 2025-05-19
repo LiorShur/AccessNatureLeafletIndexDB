@@ -610,8 +610,21 @@ function openAccessibilityForm() {
   document.getElementById("accessibilityOverlay").style.display = "flex";
 }
 
+function closeAccessibilityForm() {
+  document.getElementById("accessibilityOverlay").style.display = "none";
+}
+
 // function closeAccessibilityForm() {
-//   document.getElementById("accessibilityOverlay").style.display = "none";
+//   const overlay = document.getElementById("accessibilityOverlay");
+//   if (overlay) {
+//     overlay.style.display = "none";
+//   } else {
+//     console.warn("⚠️ accessibilityOverlay not found.");
+//   }
+//   if (wasTimerRunning) {
+//     startTime = Date.now() - elapsedTime;
+//     timerInterval = setInterval(updateTimerDisplay, 1000);
+//   }
 // }
 
 // Save handler
@@ -1919,18 +1932,7 @@ function promptAccessibilityForm(callback) {
     }, 500);
   };
 }
-function closeAccessibilityForm() {
-  const overlay = document.getElementById("accessibilityOverlay");
-  if (overlay) {
-    overlay.style.display = "none";
-  } else {
-    console.warn("⚠️ accessibilityOverlay not found.");
-  }
-  if (wasTimerRunning) {
-    startTime = Date.now() - elapsedTime;
-    timerInterval = setInterval(updateTimerDisplay, 1000);
-  }
-}
+
 
 function prefillAccessibilityForm(data) {
   const form = document.getElementById("accessibilityForm");
