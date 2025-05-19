@@ -1,11 +1,11 @@
-import {
-  STORE_NAMES,
-  dbPut,
-  dbGet,
-  dbGetAll,
-  dbDelete,
-  dbClear
-} from './db.js';
+// import {
+//   STORE_NAMES,
+//   dbPut,
+//   dbGet,
+//   dbGetAll,
+//   dbDelete,
+//   dbClear
+// } from './db.js';
 
 await dbPut(STORE_NAMES.SESSIONS, sessionObject);
 const allSessions = await dbGetAll(STORE_NAMES.SESSIONS);
