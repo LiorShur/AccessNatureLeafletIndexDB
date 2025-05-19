@@ -1278,14 +1278,14 @@ const SummaryArchive = (() => {
   };
 })();
 
-  function viewSummary(id) {
-    const item = getArchive().find(entry => entry.id === id);
-    if (!item) return alert("Summary not found!");
+  // function viewSummary(id) {
+  //   const item = getArchive().find(entry => entry.id === id);
+  //   if (!item) return alert("Summary not found!");
 
-    const blob = new Blob([item.html], { type: "text/html" });
-    const url = URL.createObjectURL(blob);
-    window.open(url, "_blank");
-  }
+  //   const blob = new Blob([item.html], { type: "text/html" });
+  //   const url = URL.createObjectURL(blob);
+  //   window.open(url, "_blank");
+  // }
 
 
 async function clearAllSessions() {
@@ -1314,41 +1314,41 @@ async function clearAllSessions() {
 }
 
 
-  function showArchiveBrowser(containerId = "archivePanel") {
-    const container = document.getElementById(containerId);
-    if (!container) return;
+//   function showArchiveBrowser(containerId = "archivePanel") {
+//     const container = document.getElementById(containerId);
+//     if (!container) return;
 
-    const archive = getArchive();
-    container.innerHTML = "<h3>📜 Saved Route Summaries</h3>";
+//     const archive = getArchive();
+//     container.innerHTML = "<h3>📜 Saved Route Summaries</h3>";
 
-    if (archive.length === 0) {
-      container.innerHTML += "<p>No summaries found.</p>";
-      return;
-    }
+//     if (archive.length === 0) {
+//       container.innerHTML += "<p>No summaries found.</p>";
+//       return;
+//     }
 
-    const ul = document.createElement("ul");
-    archive.forEach(item => {
-      const li = document.createElement("li");
-      li.innerHTML = `
-        <b>${item.name}</b> (${item.date.split("T")[0]})
-        <button onclick="SummaryArchive.viewSummary(${item.id})">View</button>
-        <button onclick="SummaryArchive.deleteSummary(${item.id})">🗑️ Delete</button>
-      `;
-      ul.appendChild(li);
-    });
+//     const ul = document.createElement("ul");
+//     archive.forEach(item => {
+//       const li = document.createElement("li");
+//       li.innerHTML = `
+//         <b>${item.name}</b> (${item.date.split("T")[0]})
+//         <button onclick="SummaryArchive.viewSummary(${item.id})">View</button>
+//         <button onclick="SummaryArchive.deleteSummary(${item.id})">🗑️ Delete</button>
+//       `;
+//       ul.appendChild(li);
+//     });
 
-    container.appendChild(ul);
-  }
+//     container.appendChild(ul);
+//   }
 
-  return {
-    saveToArchive,
-    listSummaries,
-    viewSummary,
-    deleteSummary,
-    showArchiveBrowser,
-    clearAll
-  };
-})();
+//   return {
+//     saveToArchive,
+//     listSummaries,
+//     viewSummary,
+//     deleteSummary,
+//     showArchiveBrowser,
+//     clearAll
+//   };
+// })();
 
 function generateAccessibilityHTML(accessibilityData) {
   if (!accessibilityData) return "";
