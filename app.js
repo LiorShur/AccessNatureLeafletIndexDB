@@ -176,18 +176,48 @@ function initMap(callback) {
 // === BACKUP & AUTOSAVE ===
 let autoSaveInterval = null;
 
+// function startAutoBackup() {
+//   autoSaveInterval = setInterval(() => {
+//     const backupData = { routeData, totalDistance, elapsedTime };
+//     localStorage.setItem("route_backup", JSON.stringify(backupData));
+//     console.log("🔄 Auto-saved route progress.");
+//   }, 20000);
+// }
+
+import { dbPut, STORE_NAMES } from './db.js';
+
 function startAutoBackup() {
-  autoSaveInterval = setInterval(() => {
-    const backupData = { routeData, totalDistance, elapsedTime };
-    localStorage.setItem("route_backup", JSON.stringify(backupData));
-    console.log("🔄 Auto-saved route progress.");
+  autoSaveInterval = setInterval(async () => {
+    const backupData = {
+      routeData,
+      totalDistance,
+      elapsedTime,
+      timestamp: Date.now()
+    };
+
+    try {
+      await dbPut(STORE_NAMES.BACKUPS, backupData, "route_backup");
+      console.log("🔄 Auto-saved route progress to IndexedDB.");
+    } catch (err) {
+      console.error("❌ Failed to auto-save route to IndexedDB:", err);
+    }
   }, 20000);
 }
 
+
+// function stopAutoBackup() {
+//   clearInterval(autoSaveInterval);
+//   localStorage.removeItem("route_backup");
+//   console.log("✅ Auto-backup stopped and cleared.");
+// }
+
+import { dbDelete, STORE_NAMES } from './db.js';
+
 function stopAutoBackup() {
   clearInterval(autoSaveInterval);
-  localStorage.removeItem("route_backup");
-  console.log("✅ Auto-backup stopped and cleared.");
+  dbDelete(STORE_NAMES.BACKUPS, "route_backup")
+    .then(() => console.log("✅ Auto-backup stopped and cleared from IndexedDB."))
+    .catch(err => console.error("❌ Failed to clear backup:", err));
 }
 
 // === TIMER ===
@@ -1200,14 +1230,108 @@ window.generateShareableLink = function () {
 
 // === ON LOAD SHARED LINK HANDLER ===
 
-window.onload = function () {
+// window.onload = function () {
 
+//   window.addEventListener("beforeunload", function (e) {
+//   if (isTracking) {
+//     e.preventDefault();
+//     e.returnValue = '';
+//   }
+// });
+
+//   const params = new URLSearchParams(window.location.search);
+//   const base64Data = params.get("data");
+
+//   if (base64Data) {
+//     try {
+//       const json = atob(base64Data);
+//       const sharedData = JSON.parse(json);
+//       routeData = sharedData;
+//       console.log("✅ Shared route loaded.");
+
+//       path = routeData.filter(e => e.type === "location").map(e => e.coords);
+
+//       initMap(() => {
+//         drawSavedRoutePath();
+//         showRouteDataOnMap();
+//         setTrackingButtonsEnabled(false);
+
+//       });
+//     } catch (e) {
+//       console.error("❌ Invalid shared data:", e);
+//       alert("⚠️ Failed to load shared route.");
+//     }
+//   } else {
+//     const backup = localStorage.getItem("route_backup");
+//     if (backup) {
+//       const restore = confirm("🛠️ Unsaved route found! Would you like to restore it?");
+//       if (restore) {
+//         try {
+//           const backupData = JSON.parse(backup);
+//           if (!backupData.routeData || backupData.routeData.length === 0) {
+//             throw new Error("Backup routeData is empty or invalid.");
+//           }
+
+//           routeData = backupData.routeData;
+//           totalDistance = backupData.totalDistance || 0;
+//           elapsedTime = backupData.elapsedTime || 0;
+
+//           path = routeData.filter(e => e.type === "location").map(e => e.coords);
+
+//           initMap(() => {
+//             drawSavedRoutePath();
+//             showRouteDataOnMap();
+//             //setTrackingButtonsEnabled(false);
+
+//             //disableStartButton();
+//           });
+
+//           document.getElementById("distance").textContent = totalDistance.toFixed(2) + " km";
+//           //document.getElementById("liveDistance").textContent = totalDistance.toFixed(2) + " km";
+
+//           startTime = Date.now() - elapsedTime;
+//           updateTimerDisplay();
+//           setTrackingButtonsEnabled(true);
+//           startAutoBackup();
+//           //startTimer();
+//           //updateTimerDisplay(); // ✅ only display the recovered time
+//           // Do not auto-start the timer or backup
+          
+          
+
+//           //disableStartButton();
+
+//           alert("✅ Route recovered successfully!");
+//         } catch (e) {
+//           console.error("❌ Failed to restore backup:", e);
+//           alert("⚠️ Could not restore saved backup. Data might be corrupted.");
+//           resetApp();
+//           localStorage.removeItem("route_backup");
+//         }
+//       } else {
+//         localStorage.removeItem("route_backup");
+//         resetApp();
+//       }
+//     } else {
+//       console.log("ℹ️ No backup found. Loading session list.");
+//       loadSavedSessions();
+//       if (!map) initMap(); // Fallback map init if no session or route loaded
+//     }
+//   }
+
+//   // Ensure map initializes if nothing was triggered above
+//   if (!map) initMap();
+// };
+
+import { dbGet, dbDelete, STORE_NAMES } from './db.js';
+
+window.onload = async function () {
   window.addEventListener("beforeunload", function (e) {
-  if (isTracking) {
-    e.preventDefault();
-    e.returnValue = '';
-  }
-});
+    if (isTracking) {
+      e.preventDefault();
+      e.returnValue = '';
+    }
+  });
 
   const params = new URLSearchParams(window.location.search);
   const base64Data = params.get("data");
@@ -1225,23 +1349,17 @@ window.onload = function () {
         drawSavedRoutePath();
         showRouteDataOnMap();
         setTrackingButtonsEnabled(false);
-
       });
     } catch (e) {
       console.error("❌ Invalid shared data:", e);
       alert("⚠️ Failed to load shared route.");
     }
   } else {
-    const backup = localStorage.getItem("route_backup");
-    if (backup) {
-      const restore = confirm("🛠️ Unsaved route found! Would you like to restore it?");
-      if (restore) {
-        try {
-          const backupData = JSON.parse(backup);
-          if (!backupData.routeData || backupData.routeData.length === 0) {
-            throw new Error("Backup routeData is empty or invalid.");
-          }
-
+    try {
+      const backupData = await dbGet(STORE_NAMES.BACKUPS, "route_backup");
+      if (backupData && Array.isArray(backupData.routeData) && backupData.routeData.length > 0) {
+        const restore = confirm("🛠️ Unsaved route found! Would you like to restore it?");
+        if (restore) {
           routeData = backupData.routeData;
           totalDistance = backupData.totalDistance || 0;
           elapsedTime = backupData.elapsedTime || 0;
@@ -1251,47 +1369,35 @@ window.onload = function () {
           initMap(() => {
             drawSavedRoutePath();
             showRouteDataOnMap();
-            //setTrackingButtonsEnabled(false);
-
-            //disableStartButton();
           });
 
           document.getElementById("distance").textContent = totalDistance.toFixed(2) + " km";
-          //document.getElementById("liveDistance").textContent = totalDistance.toFixed(2) + " km";
-
           startTime = Date.now() - elapsedTime;
           updateTimerDisplay();
           setTrackingButtonsEnabled(true);
           startAutoBackup();
-          //startTimer();
-          //updateTimerDisplay(); // ✅ only display the recovered time
-          // Do not auto-start the timer or backup
-          
-          
-
-          //disableStartButton();
 
           alert("✅ Route recovered successfully!");
-        } catch (e) {
-          console.error("❌ Failed to restore backup:", e);
-          alert("⚠️ Could not restore saved backup. Data might be corrupted.");
+        } else {
+          await dbDelete(STORE_NAMES.BACKUPS, "route_backup");
           resetApp();
-          localStorage.removeItem("route_backup");
         }
       } else {
-        localStorage.removeItem("route_backup");
-        resetApp();
+        console.log("ℹ️ No valid backup found. Loading session list.");
+        loadSavedSessions();
+        if (!map) initMap();
       }
-    } else {
-      console.log("ℹ️ No backup found. Loading session list.");
-      loadSavedSessions();
-      if (!map) initMap(); // Fallback map init if no session or route loaded
+    } catch (e) {
+      console.error("❌ Failed to load backup from IndexedDB:", e);
+      alert("⚠️ Could not restore saved backup. Data might be corrupted.");
+      await dbDelete(STORE_NAMES.BACKUPS, "route_backup");
+      resetApp();
     }
   }
 
-  // Ensure map initializes if nothing was triggered above
   if (!map) initMap();
 };
+
 
 // === SUMMARY ARCHIVE MODULE ===
 
@@ -1595,6 +1701,195 @@ function generateAccessibilityHTML(accessibilityData) {
   `;
 }
 
+// async function exportRouteSummary() {
+//   console.log("📦 Attempting route export...");
+
+//   if (!routeData || !Array.isArray(routeData) || routeData.length === 0) {
+//     alert("⚠️ No route data available to export. Please track or load a route first.");
+//     return;
+//   }
+
+//   const hasLocation = routeData.some(entry => entry.type === "location");
+//   if (!hasLocation) {
+//     alert("⚠️ No location data found in this session.");
+//     return;
+//   }
+
+//   const mostRecent = JSON.parse(localStorage.getItem("sessions") || "[]").slice(-1)[0];
+//   const defaultName = mostRecent?.name || "My Route";
+//   const name = prompt("Enter a title for this route summary:", defaultName);
+
+//   if (!name) return;
+
+//   const zip = new JSZip();
+//   const notesFolder = zip.folder("notes");
+//   const imagesFolder = zip.folder("images");
+//   const audioFolder = zip.folder("audio");
+
+//   let markersJS = "";
+//   let pathCoords = [];
+//   let noteCounter = 1;
+//   let photoCounter = 1;
+//   let audioCounter = 1;
+
+//   for (const entry of routeData) {
+//     if (entry.type === "location") {
+//       pathCoords.push([entry.coords.lat, entry.coords.lng]);
+//     } else if (entry.type === "text") {
+//       notesFolder.file(`note${noteCounter}.txt`, entry.content);
+//       markersJS += `
+// L.marker([${entry.coords.lat}, ${entry.coords.lng}], {
+//   icon: L.divIcon({ className: 'custom-icon', html: '📝', iconSize: [24, 24] })
+// })
+//   .addTo(map)
+//   .bindTooltip("Note ${noteCounter}")
+//   .bindPopup("<b>Note ${noteCounter}</b><br><pre>${entry.content}</pre>");
+// `;
+//       noteCounter++;
+//     } else if (entry.type === "photo") {
+//       const base64Data = entry.content.split(",")[1];
+//       imagesFolder.file(`photo${photoCounter}.jpg`, base64Data, { base64: true });
+//       markersJS += `
+// L.marker([${entry.coords.lat}, ${entry.coords.lng}], {
+//   icon: L.divIcon({ className: 'custom-icon', html: '📸', iconSize: [24, 24] })
+// })
+//   .addTo(map)
+//   .bindTooltip("Photo ${photoCounter}")
+//   .bindPopup("<b>Photo ${photoCounter}</b><br><img src='images/photo${photoCounter}.jpg' style='width:200px'>");
+// `;
+//       photoCounter++;
+//     } else if (entry.type === "audio") {
+//       const base64Data = entry.content.split(",")[1];
+//       audioFolder.file(`audio${audioCounter}.webm`, base64Data, { base64: true });
+//       markersJS += `
+// L.marker([${entry.coords.lat}, ${entry.coords.lng}])
+//   .addTo(map)
+//   .bindPopup("<b>Audio ${audioCounter}</b><br><audio controls src='audio/audio${audioCounter}.webm'></audio>");
+// `;
+//       audioCounter++;
+//     }
+//   }
+
+//   const accessibilityEntry = routeData.find(e => e.type === "accessibility");
+//   const accessibilityData = accessibilityEntry ? accessibilityEntry.content : null;
+//   const accessibilityJSON = JSON.stringify(accessibilityData);
+
+//   const boundsVar = JSON.stringify(pathCoords);
+
+//   const htmlContent = `
+// <!DOCTYPE html>
+// <html lang="en">
+// <head>
+//   <meta charset="UTF-8">
+//   <title>${name}</title>
+//   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+//   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
+//   <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+//   <style>
+//     body { margin: 0; font-family: Arial, sans-serif; }
+//     #map { height: 60vh; }
+//     #summaryPanel { padding: 20px; background: #f7f7f7; }
+//     #routeTitle { font-size: 24px; margin-bottom: 10px; color: #2c3e50; }
+//     .stats { margin-top: 10px; }
+//     .stats b { display: inline-block; width: 120px; }
+//     #description { margin-top: 20px; }
+//     #description textarea { width: 100%; height: 100px; font-size: 14px; }
+//     #accessibilityDetails ul { list-style-type: none; padding-left: 0; }
+//     #accessibilityDetails li { margin-bottom: 5px; }
+//   </style>
+// </head>
+// <body>
+// <div id="summaryPanel">
+//   <div id="routeTitle">📍 ${name}</div>
+//   <div class="stats">
+//     <div><b>Distance:</b> ${totalDistance.toFixed(2)} km</div>
+//     <div><b>Time:</b> ${document.getElementById("timer").textContent}</div>
+//     <div><b>Photos:</b> ${photoCounter - 1}</div>
+//     <div><b>Notes:</b> ${noteCounter - 1}</div>
+//     <div><b>Audios:</b> ${audioCounter - 1}</div>
+//   </div>
+//   <div id="description">
+//     <h4>General Description:</h4>
+//     <textarea placeholder="Add notes or observations about the route here..."></textarea>
+//   </div>
+//   <div id="accessibilityDetailsContainer"></div>
+// </div>
+
+// <div id="map"></div>
+// <script>
+// var map = L.map('map');
+// var bounds = L.latLngBounds(${boundsVar});
+// map.fitBounds(bounds);
+
+// L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+//   maxZoom: 18,
+//   attribution: '&copy; OpenStreetMap contributors'
+// }).addTo(map);
+
+// L.polyline(${JSON.stringify(pathCoords)}, { color: 'blue' }).addTo(map);
+
+// ${markersJS}
+
+// // Accessibility summary rendering
+// (function(){
+//   const data = ${accessibilityJSON};
+//   if (!data) return;
+//   const html = \`
+//     <div id="accessibilityDetails">
+//       <h3>♿ Accessibility Details</h3>
+//       <ul>
+//         <li><b>Disabled Parking:</b> \${data.disabledParkingCount}</li>
+//         <li><b>Path Type:</b> \${data.pathType}</li>
+//         <li><b>Accessible Length:</b> \${data.accessibleLength} m</li>
+//         <li><b>Route Type:</b> \${data.routeType}</li>
+//         <li><b>Slope:</b> \${data.slope}</li>
+//         <li><b>Points of Interest:</b> \${data.pointsOfInterest}</li>
+//         <li><b>Lookouts:</b> \${data.lookouts ? "Yes" : "No"}</li>
+//         <li><b>Picnic Spots:</b> \${data.picnicSpots ? "Yes" : "No"}</li>
+//         <li><b>Accessible Toilets:</b> \${data.accessibleToilets ? "Yes" : "No"}</li>
+//         <li><b>Benches:</b> \${data.benches ? "Yes" : "No"}</li>
+//         <li><b>Shade:</b> \${data.shade}</li>
+//       </ul>
+//     </div>\`;
+//   document.getElementById("accessibilityDetailsContainer").innerHTML = html;
+// })();
+// </script>
+// </body>
+// </html>
+// `;
+
+//   const mediaForArchive = {};
+//   routeData.forEach((entry, i) => {
+//     if (entry.type === "photo") {
+//       const base64 = entry.content.split(",")[1];
+//       mediaForArchive[`photo${i + 1}.jpg`] = base64;
+//     } else if (entry.type === "text") {
+//       mediaForArchive[`note${i + 1}.txt`] = entry.content;
+//     }
+//   });
+//   SummaryArchive.saveToArchive(name, htmlContent, mediaForArchive);
+
+//   zip.file("index.html", htmlContent);
+
+//   try {
+//     const blob = await zip.generateAsync({ type: "blob" });
+//     const url = URL.createObjectURL(blob);
+//     const a = document.createElement("a");
+//     a.href = url;
+//     a.download = `route-summary-${Date.now()}.zip`;
+//     a.click();
+//     console.log("✅ Route summary exported successfully.");
+//   } catch (e) {
+//     console.error("❌ Export failed:", e);
+//     alert("❌ Failed to export route summary.");
+//   }
+
+//   resetApp();
+//   initMap();
+// }
+
+import { dbGetAll, STORE_NAMES } from './db.js';
+
 async function exportRouteSummary() {
   console.log("📦 Attempting route export...");
 
@@ -1609,10 +1904,16 @@ async function exportRouteSummary() {
     return;
   }
 
-  const mostRecent = JSON.parse(localStorage.getItem("sessions") || "[]").slice(-1)[0];
-  const defaultName = mostRecent?.name || "My Route";
-  const name = prompt("Enter a title for this route summary:", defaultName);
+  let defaultName = "My Route";
+  try {
+    const allSessions = await dbGetAll(STORE_NAMES.SESSIONS);
+    const mostRecent = allSessions.slice(-1)[0];
+    if (mostRecent?.name) defaultName = mostRecent.name;
+  } catch (e) {
+    console.warn("⚠️ Failed to load session list from IndexedDB:", e);
+  }
 
+  const name = prompt("Enter a title for this route summary:", defaultName);
   if (!name) return;
 
   const zip = new JSZip();
@@ -1667,11 +1968,9 @@ L.marker([${entry.coords.lat}, ${entry.coords.lng}])
   const accessibilityEntry = routeData.find(e => e.type === "accessibility");
   const accessibilityData = accessibilityEntry ? accessibilityEntry.content : null;
   const accessibilityJSON = JSON.stringify(accessibilityData);
-
   const boundsVar = JSON.stringify(pathCoords);
 
-  const htmlContent = `
-<!DOCTYPE html>
+  const htmlContent = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -1724,7 +2023,6 @@ L.polyline(${JSON.stringify(pathCoords)}, { color: 'blue' }).addTo(map);
 
 ${markersJS}
 
-// Accessibility summary rendering
 (function(){
   const data = ${accessibilityJSON};
   if (!data) return;
@@ -1749,8 +2047,7 @@ ${markersJS}
 })();
 </script>
 </body>
-</html>
-`;
+</html>`;
 
   const mediaForArchive = {};
   routeData.forEach((entry, i) => {
@@ -1761,8 +2058,8 @@ ${markersJS}
       mediaForArchive[`note${i + 1}.txt`] = entry.content;
     }
   });
-  SummaryArchive.saveToArchive(name, htmlContent, mediaForArchive);
 
+  SummaryArchive.saveToArchive(name, htmlContent, mediaForArchive);
   zip.file("index.html", htmlContent);
 
   try {
@@ -1781,6 +2078,7 @@ ${markersJS}
   resetApp();
   initMap();
 }
+
 
 
 async function exportAllRoutes() {
