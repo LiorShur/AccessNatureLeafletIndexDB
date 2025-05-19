@@ -1,11 +1,15 @@
-// import {
-//   STORE_NAMES,
-//   dbPut,
-//   dbGet,
-//   dbGetAll,
-//   dbDelete,
-//   dbClear
-// } from './db.js';
+import {
+  STORE_NAMES,
+  dbPut,
+  dbGet,
+  dbGetAll,
+  dbDelete,
+  dbAdd,
+  dbClearStore,
+  dbClear,
+  dbGetMedia
+} from './db.js';
+
 
 await dbPut(STORE_NAMES.SESSIONS, sessionObject);
 const allSessions = await dbGetAll(STORE_NAMES.SESSIONS);
@@ -176,16 +180,6 @@ function initMap(callback) {
 // === BACKUP & AUTOSAVE ===
 let autoSaveInterval = null;
 
-// function startAutoBackup() {
-//   autoSaveInterval = setInterval(() => {
-//     const backupData = { routeData, totalDistance, elapsedTime };
-//     localStorage.setItem("route_backup", JSON.stringify(backupData));
-//     console.log("🔄 Auto-saved route progress.");
-//   }, 20000);
-// }
-
-import { dbPut, STORE_NAMES } from './db.js';
-
 function startAutoBackup() {
   autoSaveInterval = setInterval(async () => {
     const backupData = {
@@ -204,14 +198,6 @@ function startAutoBackup() {
   }, 20000);
 }
 
-
-// function stopAutoBackup() {
-//   clearInterval(autoSaveInterval);
-//   localStorage.removeItem("route_backup");
-//   console.log("✅ Auto-backup stopped and cleared.");
-// }
-
-import { dbDelete, STORE_NAMES } from './db.js';
 
 function stopAutoBackup() {
   clearInterval(autoSaveInterval);
@@ -762,10 +748,6 @@ window.addEventListener("beforeunload", function (e) {
   }
 });
 
-import {
-  STORE_NAMES,
-  dbPut
-} from './db.js'; // ✅ adjust path if needed
 
 window.saveSession = async function () {
   console.log("🔍 Attempting to save session...");
@@ -823,10 +805,6 @@ window.saveSession = async function () {
 
 // === LOAD SESSION LIST ===
 
-import {
-  STORE_NAMES,
-  dbGetAll
-} from './db.js'; // ✅ adjust import path as needed
 
 window.loadSavedSessions = async function () {
   const list = document.getElementById("savedSessionsList");
@@ -857,13 +835,6 @@ window.loadSavedSessions = async function () {
 };
 
 // === LOAD A SESSION ===
-
-
-import {
-  STORE_NAMES,
-  dbGet,
-  dbGetMedia
-} from './db.js'; // adjust path if needed
 
 window.loadSession = async function (id) {
   try {
@@ -935,12 +906,6 @@ function drawSavedRoutePath() {
 }
 
 // function loadMostRecentSession(callback) {
-
-import {
-  STORE_NAMES,
-  dbGetAll,
-  dbGetMedia
-} from './db.js'; // adjust the path as needed
 
 async function loadMostRecentSession(callback) {
   try {
@@ -1107,9 +1072,6 @@ window.generateShareableLink = function () {
 
 // === ON LOAD SHARED LINK HANDLER ===
 
-
-import { dbGet, dbDelete, STORE_NAMES } from './db.js';
-
 window.onload = async function () {
   window.addEventListener("beforeunload", function (e) {
     if (isTracking) {
@@ -1198,14 +1160,6 @@ function toggleArchivePanel() {
     arrow.textContent = "▼";
   }
 }
-
-
-import {
-  dbAdd,
-  dbGetAll,
-  dbDelete,
-  STORE_NAMES
-} from './db.js'; // Adjust path as needed
 
 const SummaryArchive = (() => {
   function saveToArchive(name, htmlContent, media = {}) {
@@ -1337,11 +1291,6 @@ const SummaryArchive = (() => {
     window.open(url, "_blank");
   }
 
-  
-  import {
-  STORE_NAMES,
-  dbClearStore
-} from './db.js'; // adjust path as necessary
 
 async function clearAllSessions() {
   const confirmClear = confirm("⚠️ Are you sure you want to clear all saved routes? This cannot be undone!");
@@ -1428,8 +1377,6 @@ function generateAccessibilityHTML(accessibilityData) {
   `;
 }
 
-
-import { dbGetAll, STORE_NAMES } from './db.js';
 
 async function exportRouteSummary() {
   console.log("📦 Attempting route export...");
@@ -1620,8 +1567,6 @@ ${markersJS}
   initMap();
 }
 
-
-import { dbGetAll, STORE_NAMES } from './db.js';
 
 async function exportAllRoutes() {
   const sessions = await dbGetAll(STORE_NAMES.SESSIONS);
@@ -1904,11 +1849,6 @@ function prepareAndExport() {
   });
 }
 
-
-import {
-  STORE_NAMES,
-  dbClearStore
-} from './db.js'; // adjust the path as needed
 
 function clearAllAppData() {
   const confirmClear = confirm("⚠️ This will permanently delete all routes, summaries, and backups. Continue?");
