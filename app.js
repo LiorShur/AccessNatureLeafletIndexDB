@@ -606,13 +606,13 @@ window.addEventListener("DOMContentLoaded", () => {
   });
 });
 
-// function openAccessibilityForm() {
-//   document.getElementById("accessibilityOverlay").style.display = "flex";
-// }
-
-function closeAccessibilityForm() {
-  document.getElementById("accessibilityOverlay").style.display = "none";
+function openAccessibilityForm() {
+  document.getElementById("accessibilityOverlay").style.display = "flex";
 }
+
+// function closeAccessibilityForm() {
+//   document.getElementById("accessibilityOverlay").style.display = "none";
+// }
 
 // Save handler
 document.getElementById("accessibilityForm").addEventListener("submit", function(e) {
