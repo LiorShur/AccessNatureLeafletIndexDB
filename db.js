@@ -17,15 +17,19 @@ function openDB() {
 
     request.onupgradeneeded = (e) => {
       const db = e.target.result;
+
       if (!db.objectStoreNames.contains(STORE_NAMES.SESSIONS)) {
         db.createObjectStore(STORE_NAMES.SESSIONS, { keyPath: "id", autoIncrement: true });
       }
+
       if (!db.objectStoreNames.contains(STORE_NAMES.BACKUPS)) {
         db.createObjectStore(STORE_NAMES.BACKUPS);
       }
+
       if (!db.objectStoreNames.contains(STORE_NAMES.MEDIA)) {
         db.createObjectStore(STORE_NAMES.MEDIA, { keyPath: "id" });
       }
+
       if (!db.objectStoreNames.contains(STORE_NAMES.SUMMARIES)) {
         db.createObjectStore(STORE_NAMES.SUMMARIES, { keyPath: "id", autoIncrement: true });
       }
@@ -43,7 +47,7 @@ async function dbPut(storeName, value, key = null) {
   return new Promise((resolve, reject) => {
     const tx = db.transaction(storeName, "readwrite");
     const store = tx.objectStore(storeName);
-    const request = key ? store.put(value, key) : store.put(value);
+    const request = key !== null ? store.put(value, key) : store.put(value);
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });
@@ -93,7 +97,7 @@ async function dbClear(storeName) {
   });
 }
 
-// Export all functions
+// === Exports ===
 export {
   STORE_NAMES,
   dbPut,
@@ -102,4 +106,3 @@ export {
   dbDelete,
   dbClear
 };
-
