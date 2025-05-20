@@ -668,7 +668,8 @@ document.getElementById("accessibilityForm").addEventListener("submit", function
 // ===  ROUTE & NOTES ===
 let noteMarkers = []; // Global array to track note markers
 
-function showRouteDataOnMap() {
+//function showRouteDataOnMap() {
+window.showRouteDataOnMap = function () {
   if (noteMarkers.length > 0) {
     noteMarkers.forEach(marker => marker.remove());
     noteMarkers = [];
