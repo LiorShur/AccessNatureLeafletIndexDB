@@ -260,6 +260,11 @@ function disableStartButton() {
 }
 
 window.startTracking = function () {
+  if (!map || !marker) {
+    console.warn("⚠️ Map or marker not initialized. Running initMap() now...");
+    initMap(() => startTracking());
+    return;
+  }
   openAccessibilityForm();
 
   setTrackingButtonsEnabled(true);
