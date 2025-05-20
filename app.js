@@ -398,7 +398,7 @@ if (wantsToFill) openAccessibilityForm();
   }
 };
 
-function resetApp() {
+async function resetApp() {
   // Clear state
   routeData = [];
   path = [];
@@ -434,9 +434,12 @@ function resetApp() {
   }
 
   // Re-add base tile layer and marker
-  if (!map) {
-    initMap();
-  }
+  // if (!map) {
+  //   initMap();
+  // }
+
+  // Reinitialize the map and wait until it's ready
+  await new Promise(resolve => initMap(resolve));
 
   const defaultView = [0, 0];
   map.setView(defaultView, 15);
