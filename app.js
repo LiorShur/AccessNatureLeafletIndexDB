@@ -613,9 +613,9 @@ function openAccessibilityForm() {
   document.getElementById("accessibilityOverlay").style.display = "flex";
 }
 
-function closeAccessibilityForm() {
-  document.getElementById("accessibilityOverlay").style.display = "none";
-}
+// function closeAccessibilityForm() {
+//   document.getElementById("accessibilityOverlay").style.display = "none";
+// }
 
 // function closeAccessibilityForm() {
 //   const overlay = document.getElementById("accessibilityOverlay");
@@ -629,6 +629,17 @@ function closeAccessibilityForm() {
 //     timerInterval = setInterval(updateTimerDisplay, 1000);
 //   }
 // }
+
+window.closeAccessibilityForm = function () {
+  const overlay = document.getElementById("accessibilityOverlay");
+  if (overlay) overlay.style.display = "none";
+
+  if (wasTimerRunning) {
+    startTime = Date.now() - elapsedTime;
+    timerInterval = setInterval(updateTimerDisplay, 1000);
+  }
+};
+
 
 // Save handler
 document.getElementById("accessibilityForm").addEventListener("submit", function(e) {
