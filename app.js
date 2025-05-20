@@ -872,6 +872,7 @@ window.saveSession = async function () {
 🏁 Route Summary:
 📏 Distance: ${totalDistance.toFixed(2)} km
 ⏱️ Time: ${document.getElementById("timer").textContent}`);
+    
     document.getElementById("resetBtn").disabled = false;
 
     loadSavedSessions(); // You may want to adapt this too later
