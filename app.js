@@ -12,46 +12,89 @@ let mediaRecorder;
 let audioChunks = [];
 let isTracking = false;
 
-function initMap(callback) {
-  //   // If a map already exists on this container, remove it
-  if (map && map.remove) {
-    map.remove(); // Clean up the previous map instance
-  }
-//   // Now safely initialize a new map
-  map = L.map('map').setView([0, 0], 15);
+// function initMap(callback) {
+//   //   // If a map already exists on this container, remove it
+//   if (map && map.remove) {
+//     map.remove(); // Clean up the previous map instance
+//   }
+// //   // Now safely initialize a new map
+//   map = L.map('map').setView([0, 0], 15);
 
-  // Add OpenStreetMap tiles
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19,
-    attribution: '&copy; OpenStreetMap contributors'
-  }).addTo(map);
+//   // Add OpenStreetMap tiles
+//   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+//     maxZoom: 19,
+//     attribution: '&copy; OpenStreetMap contributors'
+//   }).addTo(map);
 
-  // Add initial marker at [0, 0]
-  marker = L.marker([0, 0]).addTo(map).bindPopup("Start").openPopup();
+//   // Add initial marker at [0, 0]
+//   marker = L.marker([0, 0]).addTo(map).bindPopup("Start").openPopup();
 
-  // Try to get user location and delay view update to avoid premature map interaction
-  if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(
-      position => {
-        const userLocation = {
-          lat: position.coords.latitude,
-          lng: position.coords.longitude
-        };
+//   // Try to get user location and delay view update to avoid premature map interaction
+//   if (navigator.geolocation) {
+//     navigator.geolocation.getCurrentPosition(
+//       position => {
+//         const userLocation = {
+//           lat: position.coords.latitude,
+//           lng: position.coords.longitude
+//         };
 
-        // Use a short timeout to ensure map is ready before setting view
-        setTimeout(() => {
-          map.setView(userLocation, 17);
-          marker.setLatLng(userLocation);
-        }, 150); // slight delay to avoid _leaflet_pos error
-      },
-      error => {
-        console.warn("Geolocation failed or denied, using default.");
-      }
-    );
-  }
+//         // Use a short timeout to ensure map is ready before setting view
+//         setTimeout(() => {
+//           map.setView(userLocation, 17);
+//           marker.setLatLng(userLocation);
+//         }, 150); // slight delay to avoid _leaflet_pos error
+//       },
+//       error => {
+//         console.warn("Geolocation failed or denied, using default.");
+//       }
+//     );
+//   }
 
-  if (callback) callback();
+//   if (callback) callback();
+// }
+
+function initMap() {
+  return new Promise((resolve) => {
+    // Clean up existing map if needed
+    if (map && map.remove) {
+      map.remove();
+    }
+
+    map = L.map("map").setView([0, 0], 15);
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution: "&copy; OpenStreetMap contributors",
+    }).addTo(map);
+
+    marker = L.marker([0, 0]).addTo(map).bindPopup("Start").openPopup();
+
+    // Try to get current location
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const userLocation = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          };
+
+          setTimeout(() => {
+            map.setView(userLocation, 17);
+            marker.setLatLng(userLocation);
+            resolve(); // ✅ Done initializing with user location
+          }, 150);
+        },
+        (error) => {
+          console.warn("Geolocation failed or denied. Using default location.");
+          resolve(); // ✅ Still resolve so that loading can continue
+        }
+      );
+    } else {
+      resolve(); // ✅ Geolocation not supported — still resolve
+    }
+  });
 }
+
 
 import { renderStoragePanel } from './storageMonitor.js';
 
@@ -2082,3 +2125,32 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 });
+
+// ✅ Expose necessary functions to the global scope for HTML bindings
+window.startTracking = startTracking;
+window.togglePause = togglePause;
+window.stopTracking = stopTracking;
+window.confirmAndResetApp = confirmAndResetApp;
+window.capturePhoto = capturePhoto;
+window.captureVideo = captureVideo;
+window.addTextNote = addTextNote;
+window.startAudioRecording = startAudioRecording;
+window.openAccessibilityForm = openAccessibilityForm;
+window.closeAccessibilityForm = closeAccessibilityForm;
+window.showRouteDataOnMap = showRouteDataOnMap;
+window.saveSession = saveSession;
+window.loadSavedSessions = loadSavedSessions;
+window.loadSession = loadSession;
+window.exportData = exportData;
+window.exportPDF = exportPDF;
+window.exportGPX = exportGPX;
+window.generateShareableLink = generateShareableLink;
+window.toggleArchivePanel = toggleArchivePanel;
+window.clearAllSessions = clearAllSessions;
+window.clearAllAppData = clearAllAppData;
+window.prepareAndExport = prepareAndExport;
+window.exportRouteSummary = exportRouteSummary;
+window.exportAllRoutes = exportAllRoutes;
+window.closeHistory = closeHistory;
+window.toggleDarkMode = toggleDarkMode;
+
