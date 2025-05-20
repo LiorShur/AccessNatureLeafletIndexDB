@@ -288,7 +288,10 @@ window.startTracking = function () {
 
         lastCoords = latLng;
         path.push(latLng);
-        marker.setLatLng(latLng);
+        //marker.setLatLng(latLng);
+        if (marker) marker.setLatLng(latLng);
+        else console.warn("⚠️ Marker not initialized.");
+
         map.panTo(latLng);
 
         // Draw new polyline for the path
