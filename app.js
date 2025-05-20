@@ -434,10 +434,9 @@ function resetApp() {
   }
 
   // Re-add base tile layer and marker
-  // if (!map) {
-  //   initMap();
-  // }
-  await new Promise(resolve => initMap(resolve));
+  if (!map) {
+    initMap();
+  }
 
   const defaultView = [0, 0];
   map.setView(defaultView, 15);
