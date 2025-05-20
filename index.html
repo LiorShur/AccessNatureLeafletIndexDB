@@ -7,7 +7,6 @@
   <title>Access Nature</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
   <script src="https://cdn.jsdelivr.net/npm/jszip@3.7.1/dist/jszip.min.js"></script>
-  <script type="module" src="storageMonitor.js"></script>
   <link rel="stylesheet" href="styles.css" />
 </head>
   <div id="storageStatus" style="
@@ -255,8 +254,10 @@
     src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB4IoUFBPNGtVySKpFoqE9VITvGV7nkLHw&callback=initMap"
     ></script> -->
   <!-- ✅ New: Leaflet.js -->
-
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script type="module" src="domReady.js"></script>
+  <script type="module" src="initApp"></script>
+  <script type="module" src="storageMonitor.js"></script>
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script type="module" src="app.js"></script>
 </body>
 </html>
