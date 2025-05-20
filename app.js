@@ -95,6 +95,17 @@ function initMap() {
   });
 }
 
+window.ensureMapInitialized = function (callback) {
+  const mapContainer = document.getElementById("map");
+
+  if (!mapContainer || mapContainer.offsetHeight === 0) {
+    // Retry once DOM is fully laid out
+    setTimeout(() => ensureMapInitialized(callback), 100);
+  } else {
+    initMap(callback);
+  }
+}
+
 
 import { renderStoragePanel } from './storageMonitor.js';
 
@@ -1240,6 +1251,7 @@ window.onload = async function () {
 
   // ✅ Always initialize the map first
   await new Promise(resolve => initMap(resolve));
+  ensureMapInitialized();
 
   const params = new URLSearchParams(window.location.search);
   const base64Data = params.get("data");
