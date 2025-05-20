@@ -439,7 +439,7 @@ window.resetApp = async function () {
   // }
 
   // Reinitialize the map and wait until it's ready
-  await new Promise(resolve => initMap(resolve));
+  //await new Promise(resolve => initMap(resolve));
 
   const defaultView = [0, 0];
   map.setView(defaultView, 15);
