@@ -1106,6 +1106,80 @@ window.generateShareableLink = function () {
 
 // === ON LOAD SHARED LINK HANDLER ===
 
+// window.onload = async function () {
+//   window.addEventListener("beforeunload", function (e) {
+//     if (isTracking) {
+//       e.preventDefault();
+//       e.returnValue = '';
+//     }
+//   });
+//   renderStoragePanel(); // floating display starts updating
+
+//   const params = new URLSearchParams(window.location.search);
+//   const base64Data = params.get("data");
+
+//   if (base64Data) {
+//     try {
+//       const json = atob(base64Data);
+//       const sharedData = JSON.parse(json);
+//       routeData = sharedData;
+//       console.log("✅ Shared route loaded.");
+
+//       path = routeData.filter(e => e.type === "location").map(e => e.coords);
+
+//       initMap(() => {
+//         drawSavedRoutePath();
+//         showRouteDataOnMap();
+//         setTrackingButtonsEnabled(false);
+//       });
+//     } catch (e) {
+//       console.error("❌ Invalid shared data:", e);
+//       alert("⚠️ Failed to load shared route.");
+//     }
+//   } else {
+//     try {
+//       const backupData = await dbGet(STORE_NAMES.BACKUPS, "route_backup");
+//       if (backupData && Array.isArray(backupData.routeData) && backupData.routeData.length > 0) {
+//         const restore = confirm("🛠️ Unsaved route found! Would you like to restore it?");
+//         if (restore) {
+//           routeData = backupData.routeData;
+//           totalDistance = backupData.totalDistance || 0;
+//           elapsedTime = backupData.elapsedTime || 0;
+
+//           path = routeData.filter(e => e.type === "location").map(e => e.coords);
+
+//           initMap(() => {
+//             drawSavedRoutePath();
+//             showRouteDataOnMap();
+//           });
+
+//           document.getElementById("distance").textContent = totalDistance.toFixed(2) + " km";
+//           startTime = Date.now() - elapsedTime;
+//           updateTimerDisplay();
+//           setTrackingButtonsEnabled(true);
+//           startAutoBackup();
+
+//           alert("✅ Route recovered successfully!");
+//         } else {
+//           await dbDelete(STORE_NAMES.BACKUPS, "route_backup");
+//           resetApp();
+//         }
+//       } else {
+//         console.log("ℹ️ No valid backup found. Loading session list.");
+//         loadSavedSessions();
+//         if (!map) initMap();
+//       }
+//     } catch (e) {
+//       console.error("❌ Failed to load backup from IndexedDB:", e);
+//       alert("⚠️ Could not restore saved backup. Data might be corrupted.");
+//       await dbDelete(STORE_NAMES.BACKUPS, "route_backup");
+//       resetApp();
+//     }
+//   }
+
+//   if (!map) initMap();
+// };
+
 window.onload = async function () {
   window.addEventListener("beforeunload", function (e) {
     if (isTracking) {
@@ -1113,7 +1187,11 @@ window.onload = async function () {
       e.returnValue = '';
     }
   });
-  renderStoragePanel(); // floating display starts updating
+
+  renderStoragePanel(); // 🟡 Show usage panel immediately
+
+  // ✅ Always initialize the map first
+  await new Promise(resolve => initMap(resolve));
 
   const params = new URLSearchParams(window.location.search);
   const base64Data = params.get("data");
@@ -1127,58 +1205,59 @@ window.onload = async function () {
 
       path = routeData.filter(e => e.type === "location").map(e => e.coords);
 
-      initMap(() => {
-        drawSavedRoutePath();
-        showRouteDataOnMap();
-        setTrackingButtonsEnabled(false);
-      });
+      drawSavedRoutePath();
+      showRouteDataOnMap();
+      setTrackingButtonsEnabled(false);
+      return;
     } catch (e) {
       console.error("❌ Invalid shared data:", e);
       alert("⚠️ Failed to load shared route.");
     }
-  } else {
-    try {
-      const backupData = await dbGet(STORE_NAMES.BACKUPS, "route_backup");
-      if (backupData && Array.isArray(backupData.routeData) && backupData.routeData.length > 0) {
-        const restore = confirm("🛠️ Unsaved route found! Would you like to restore it?");
-        if (restore) {
-          routeData = backupData.routeData;
-          totalDistance = backupData.totalDistance || 0;
-          elapsedTime = backupData.elapsedTime || 0;
-
-          path = routeData.filter(e => e.type === "location").map(e => e.coords);
-
-          initMap(() => {
-            drawSavedRoutePath();
-            showRouteDataOnMap();
-          });
-
-          document.getElementById("distance").textContent = totalDistance.toFixed(2) + " km";
-          startTime = Date.now() - elapsedTime;
-          updateTimerDisplay();
-          setTrackingButtonsEnabled(true);
-          startAutoBackup();
-
-          alert("✅ Route recovered successfully!");
-        } else {
-          await dbDelete(STORE_NAMES.BACKUPS, "route_backup");
-          resetApp();
-        }
-      } else {
-        console.log("ℹ️ No valid backup found. Loading session list.");
-        loadSavedSessions();
-        if (!map) initMap();
-      }
-    } catch (e) {
-      console.error("❌ Failed to load backup from IndexedDB:", e);
-      alert("⚠️ Could not restore saved backup. Data might be corrupted.");
-      await dbDelete(STORE_NAMES.BACKUPS, "route_backup");
-      resetApp();
-    }
   }
 
-  if (!map) initMap();
+  try {
+    const backupData = await dbGet(STORE_NAMES.BACKUPS, "route_backup");
+
+    if (backupData?.routeData?.length) {
+      const restore = confirm("🛠️ Unsaved route found! Would you like to restore it?");
+      if (restore) {
+        routeData = backupData.routeData;
+        totalDistance = backupData.totalDistance || 0;
+        elapsedTime = backupData.elapsedTime || 0;
+
+        path = routeData.filter(e => e.type === "location").map(e => e.coords);
+
+        drawSavedRoutePath();
+        showRouteDataOnMap();
+        document.getElementById("distance").textContent = totalDistance.toFixed(2) + " km";
+
+        startTime = Date.now() - elapsedTime;
+        updateTimerDisplay();
+        setTrackingButtonsEnabled(true);
+        startAutoBackup();
+
+        alert("✅ Route recovered successfully!");
+        return;
+      } else {
+        await dbDelete(STORE_NAMES.BACKUPS, "route_backup");
+        resetApp();
+        return;
+      }
+    } else {
+      console.log("ℹ️ No valid backup found.");
+    }
+  } catch (e) {
+    console.error("❌ Failed to load backup from IndexedDB:", e);
+    alert("⚠️ Could not restore saved backup.");
+    await dbDelete(STORE_NAMES.BACKUPS, "route_backup");
+    resetApp();
+    return;
+  }
+
+  // Default fallback: show session list
+  loadSavedSessions();
 };
+
 
 
 // === SUMMARY ARCHIVE MODULE ===
