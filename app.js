@@ -398,7 +398,7 @@ if (wantsToFill) openAccessibilityForm();
   }
 };
 
-async function resetApp() {
+window.resetApp = async function () {
   // Clear state
   routeData = [];
   path = [];
