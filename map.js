@@ -33,6 +33,10 @@ export function getMap() {
   return map;
 }
 
+export function getMapInstance() {
+  return mapInstance;
+}
+
 export function getMarker() {
   return marker;
 }
