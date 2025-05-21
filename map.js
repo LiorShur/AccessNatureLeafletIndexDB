@@ -40,3 +40,7 @@ export function getMapInstance() {
 export function getMarker() {
   return marker;
 }
+
+export function getMarkerInstance() {
+  return MarkerInstance;
+}
