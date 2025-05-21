@@ -1,7 +1,7 @@
 import { onDOMReady } from './domReady.js';
 //import { initMap, getMapInstance, getMarkerInstance } from './map.js';
 //import { startTracking, stopTracking, resetTrackingState } from './tracking.js';
-import { setControlButtonsEnabled, setTrackingButtonsEnabled } from './uiUtils.js';
+//import { setControlButtonsEnabled, setTrackingButtonsEnabled } from './uiUtils.js';
 //import { renderStoragePanel } from './storageMonitor.js';
 
 
@@ -131,32 +131,32 @@ const allSessions = await dbGetAll(STORE_NAMES.SESSIONS);
 
 
 
-// function setControlButtonsEnabled(enabled) {
-//   const idsToDisable = [
-//     "startBtn",
-//     "resetBtn",
-//     "prepareAndExportBtn",
-//     "exportAllRoutesBtn",
-//     "exportDataBtn",
-//     "exportPDFBtn",
-//     "exportGPXBtn",
-//     "toggleArchivePanelBtn",
-//     "clearArchiveBtnBtn",
-//     "closeHistoryBtn",
-//     "clearAllSessionsBtn",
-//     "clearAllAppDataBtn",
-//     "loadSessionBtn",
-//   ];
+function setControlButtonsEnabled(enabled) {
+  const idsToDisable = [
+    "startBtn",
+    "resetBtn",
+    "prepareAndExportBtn",
+    "exportAllRoutesBtn",
+    "exportDataBtn",
+    "exportPDFBtn",
+    "exportGPXBtn",
+    "toggleArchivePanelBtn",
+    "clearArchiveBtnBtn",
+    "closeHistoryBtn",
+    "clearAllSessionsBtn",
+    "clearAllAppDataBtn",
+    "loadSessionBtn",
+  ];
 
-//   idsToDisable.forEach(id => {
-//     const el = document.getElementById(id);
-//     if (el) {
-//       el.disabled = !enabled;
-//       el.style.opacity = enabled ? "1" : "0.5";
-//       el.style.pointerEvents = enabled ? "auto" : "none";
-//     }
-//   });
-// }
+  idsToDisable.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.disabled = !enabled;
+      el.style.opacity = enabled ? "1" : "0.5";
+      el.style.pointerEvents = enabled ? "auto" : "none";
+    }
+  });
+}
 
 
 // function setTrackingButtonsEnabled(enabled) {
