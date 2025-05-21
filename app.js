@@ -1,5 +1,5 @@
 import { onDOMReady } from './domReady.js';
-import { initMap, getMapInstance, getMarkerInstance } from './map.js';
+//import { initMap, getMapInstance, getMarkerInstance } from './map.js';
 //import { startTracking, stopTracking, resetTrackingState } from './tracking.js';
 import { setControlButtonsEnabled, setTrackingButtonsEnabled } from './uiUtils.js';
 //import { renderStoragePanel } from './storageMonitor.js';
@@ -60,47 +60,47 @@ let isTracking = false;
 //   if (callback) callback();
 // }
 
-// function initMap() {
-//   return new Promise((resolve) => {
-//     // Clean up existing map if needed
-//     if (map && map.remove) {
-//       map.remove();
-//     }
+function initMap() {
+  return new Promise((resolve) => {
+    // Clean up existing map if needed
+    if (map && map.remove) {
+      map.remove();
+    }
 
-//     map = L.map("map").setView([0, 0], 15);
+    map = L.map("map").setView([0, 0], 15);
 
-//     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-//       maxZoom: 19,
-//       attribution: "&copy; OpenStreetMap contributors",
-//     }).addTo(map);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution: "&copy; OpenStreetMap contributors",
+    }).addTo(map);
 
-//     marker = L.marker([0, 0]).addTo(map).bindPopup("Start").openPopup();
+    marker = L.marker([0, 0]).addTo(map).bindPopup("Start").openPopup();
 
-//     // Try to get current location
-//     if (navigator.geolocation) {
-//       navigator.geolocation.getCurrentPosition(
-//         (position) => {
-//           const userLocation = {
-//             lat: position.coords.latitude,
-//             lng: position.coords.longitude,
-//           };
+    // Try to get current location
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const userLocation = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          };
 
-//           setTimeout(() => {
-//             map.setView(userLocation, 17);
-//             marker.setLatLng(userLocation);
-//             resolve(); // ✅ Done initializing with user location
-//           }, 150);
-//         },
-//         (error) => {
-//           console.warn("Geolocation failed or denied. Using default location.");
-//           resolve(); // ✅ Still resolve so that loading can continue
-//         }
-//       );
-//     } else {
-//       resolve(); // ✅ Geolocation not supported — still resolve
-//     }
-//   });
-// }
+          setTimeout(() => {
+            map.setView(userLocation, 17);
+            marker.setLatLng(userLocation);
+            resolve(); // ✅ Done initializing with user location
+          }, 150);
+        },
+        (error) => {
+          console.warn("Geolocation failed or denied. Using default location.");
+          resolve(); // ✅ Still resolve so that loading can continue
+        }
+      );
+    } else {
+      resolve(); // ✅ Geolocation not supported — still resolve
+    }
+  });
+}
 
 window.ensureMapInitialized = function (callback) {
   const mapContainer = document.getElementById("map");
