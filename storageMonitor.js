@@ -30,26 +30,57 @@ async function getStorageStatus() {
   };
 }
 
-function renderStoragePanel(containerId = "storageStatus") {
-  let el = document.getElementById(containerId);
+// function renderStoragePanel(containerId = "storageStatus") {
+//   let el = document.getElementById(containerId);
+//   if (!el) {
+//     el = document.createElement("div");
+//     el.id = containerId;
+//     el.style.cssText = `
+//       position: fixed;
+//       bottom: 10px;
+//       right: 10px;
+//       background: rgba(0,0,0,0.8);
+//       color: white;
+//       font-family: monospace;
+//       font-size: 12px;
+//       padding: 10px;
+//       border-radius: 6px;
+//       z-index: 9999;
+//       white-space: pre-line;
+//     `;
+//     document.body.appendChild(el);
+//   }
+export async function renderStoragePanel() {
+  const el = document.getElementById("storageStatus");
   if (!el) {
-    el = document.createElement("div");
-    el.id = containerId;
-    el.style.cssText = `
-      position: fixed;
-      bottom: 10px;
-      right: 10px;
-      background: rgba(0,0,0,0.8);
-      color: white;
-      font-family: monospace;
-      font-size: 12px;
-      padding: 10px;
-      border-radius: 6px;
-      z-index: 9999;
-      white-space: pre-line;
-    `;
-    document.body.appendChild(el);
+    console.warn("⚠️ storageStatus element not found.");
+    return;
   }
+
+  if (!navigator.storage?.estimate) {
+    el.innerHTML = "⚠️ Storage API not supported.";
+    return;
+  }
+
+  try {
+    const { usage, quota } = await navigator.storage.estimate();
+    const usedMB = (usage / 1024 / 1024).toFixed(2);
+    const quotaMB = (quota / 1024 / 1024).toFixed(2);
+    const percent = ((usage / quota) * 100).toFixed(1);
+
+    el.innerHTML = `
+      💾 Used: ${usedMB} MB<br>
+      🧱 Quota: ${quotaMB} MB<br>
+      📊 Usage: ${percent}%
+    `;
+  } catch (e) {
+    el.innerHTML = "❌ Failed to estimate storage.";
+    console.error("❌ Storage estimate error:", e);
+  }
+
+  setTimeout(renderStoragePanel, 10000); // Repeat every 10s
+}
+
 
   async function update() {
     const status = await getStorageStatus();
