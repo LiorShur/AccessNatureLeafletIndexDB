@@ -1,7 +1,7 @@
 import { onDOMReady } from './domReady.js';
 //import { initMap, getMapInstance, getMarkerInstance } from './map.js';
 //import { startTracking, stopTracking, resetTrackingState } from './tracking.js';
-//import { setControlButtonsEnabled, setTrackingButtonsEnabled } from './uiUtils.js';
+import { setControlButtonsEnabled, setTrackingButtonsEnabled } from './uiUtils.js';
 import { renderStoragePanel } from './storageMonitor.js';
 
 
