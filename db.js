@@ -40,6 +40,93 @@ function openDB() {
     request.onerror = () => reject(request.error);
   });
 }
+// === Generic helper functions ===
+
+async function dbPut(storeName, value, key = null) {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(storeName, "readwrite");
+    const store = tx.objectStore(storeName);
+    const request = key !== null ? store.put(value, key) : store.put(value);
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function dbGet(storeName, key) {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(storeName, "readonly");
+    const store = tx.objectStore(storeName);
+    const request = store.get(key);
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function dbGetAll(storeName) {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(storeName, "readonly");
+    const store = tx.objectStore(storeName);
+    const request = store.getAll();
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function dbDelete(storeName, key) {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(storeName, "readwrite");
+    const store = tx.objectStore(storeName);
+    const request = store.delete(key);
+    request.onsuccess = () => resolve();
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function dbClear(storeName) {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(storeName, "readwrite");
+    const store = tx.objectStore(storeName);
+    const request = store.clear();
+    request.onsuccess = () => resolve();
+    request.onerror = () => reject(request.error);
+  });
+}
+
+function dbAdd(storeName, value, key = null) {
+  return openDB().then(db => {
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(storeName, "readwrite");
+      const store = tx.objectStore(storeName);
+      const request = key ? store.add(value, key) : store.add(value);
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  });
+}
+
+function dbClearStore(storeName) {
+  return openDB().then(db => {
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(storeName, "readwrite");
+      const store = tx.objectStore(storeName);
+      const request = store.clear();
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  });
+}
+
+function dbGetMedia(id) {
+  return dbGet(STORE_NAMES.MEDIA, id).then(record => {
+    if (!record) throw new Error(Media not found: ${id});
+    return record.data;
+  });
+}
 
 export {
   STORE_NAMES,
