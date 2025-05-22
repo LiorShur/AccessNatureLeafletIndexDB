@@ -756,36 +756,62 @@ function compressImage(file, quality, callback) {
 
 // === MEDIA INPUT EVENTS ===
 window.addEventListener("DOMContentLoaded", () => {
+//   document.getElementById("photoInput").addEventListener("change", e => {
+//     const file = e.target.files[0];
+//     if (file) {
+//       const reader = new FileReader();
+//       reader.onload = () => {
+//         navigator.geolocation.getCurrentPosition(pos => {
+//           routeData.push({
+//             type: "photo",
+//             timestamp: Date.now(),
+//             coords: { lat: pos.coords.latitude, lng: pos.coords.longitude },
+//             content: reader.result
+//           });
+//           alert("Photo saved.");
+//         });
+//       };
+//       // reader.readAsDataURL(file);
+//       compressImage(file, 0.7, base64 => {
+//   navigator.geolocation.getCurrentPosition(pos => {
+//     routeData.push({
+//       type: "photo",
+//       timestamp: Date.now(),
+//       coords: { lat: pos.coords.latitude, lng: pos.coords.longitude },
+//       content: base64
+//     });
+//     alert("📷 Compressed photo saved.");
+//   });
+// });
+
+//     }
+//   });
+
   document.getElementById("photoInput").addEventListener("change", e => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        navigator.geolocation.getCurrentPosition(pos => {
-          routeData.push({
-            type: "photo",
-            timestamp: Date.now(),
-            coords: { lat: pos.coords.latitude, lng: pos.coords.longitude },
-            content: reader.result
-          });
-          alert("Photo saved.");
-        });
+  const file = e.target.files[0];
+  if (!file) return;
+
+  compressImage(file, 0.6, base64 => {
+    navigator.geolocation.getCurrentPosition(pos => {
+      const photoEntry = {
+        type: "photo",
+        timestamp: Date.now(),
+        coords: {
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude
+        },
+        content: base64
       };
-      // reader.readAsDataURL(file);
-      compressImage(file, 0.7, base64 => {
-  navigator.geolocation.getCurrentPosition(pos => {
-    routeData.push({
-      type: "photo",
-      timestamp: Date.now(),
-      coords: { lat: pos.coords.latitude, lng: pos.coords.longitude },
-      content: base64
+
+      console.log("📷 Photo captured (base64 length):", base64.length);
+      routeData.push(photoEntry);
+      alert("📸 Compressed photo saved.");
+    }, err => {
+      alert("⚠️ Could not get location for photo.");
     });
-    alert("📷 Compressed photo saved.");
   });
 });
 
-    }
-  });
 
   document.getElementById("videoInput").addEventListener("change", e => {
     const file = e.target.files[0];
@@ -988,15 +1014,30 @@ window.saveSession = async function () {
   const sessionData = JSON.parse(JSON.stringify(routeData));
 
   // Save media separately and remove base64 from main data
+  // for (let i = 0; i < sessionData.length; i++) {
+  //   const entry = sessionData[i];
+  //   if (["photo", "audio", "video"].includes(entry.type) && entry.content) {
+  //     const mediaId = `media_${Date.now()}_${i}`;
+  //     await dbPut(STORE_NAMES.MEDIA, { id: mediaId, data: entry.content });
+  //     entry.mediaId = mediaId;
+  //     delete entry.content;
+  //   }
+  // }
   for (let i = 0; i < sessionData.length; i++) {
-    const entry = sessionData[i];
-    if (["photo", "audio", "video"].includes(entry.type) && entry.content) {
-      const mediaId = `media_${Date.now()}_${i}`;
+  const entry = sessionData[i];
+  if (["photo", "audio", "video"].includes(entry.type) && entry.content) {
+    const mediaId = `media_${Date.now()}_${i}`;
+    try {
       await dbPut(STORE_NAMES.MEDIA, { id: mediaId, data: entry.content });
+      console.log(`✅ Saved ${entry.type} to MEDIA store:`, mediaId);
       entry.mediaId = mediaId;
       delete entry.content;
+    } catch (e) {
+      console.error(`❌ Failed to save ${entry.type} to IndexedDB:`, e);
     }
   }
+}
+
 
   const session = {
     name,
