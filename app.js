@@ -114,7 +114,7 @@ window.ensureMapInitialized = function (callback) {
 }
 
 import {
-  STORE_NAMES,
+  STORE_NAMES.ARCHIVE,
   dbPut,
   dbGet,
   dbGetAll,
