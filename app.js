@@ -113,17 +113,17 @@ window.ensureMapInitialized = function (callback) {
   }
 }
 
-import {
-  STORE_NAMES,
-  dbPut,
-  dbGet,
-  dbGetAll,
-  dbDelete,
-  dbAdd,
-  dbClearStore,
-  dbClear,
-  dbGetMedia
-} from './db.js';
+// import {
+//   STORE_NAMES,
+//   dbPut,
+//   dbGet,
+//   dbGetAll,
+//   dbDelete,
+//   dbAdd,
+//   dbClearStore,
+//   dbClear,
+//   dbGetMedia
+// } from './db.js';
 
 
 //await dbPut(STORE_NAMES.SESSIONS, sessionObject);
