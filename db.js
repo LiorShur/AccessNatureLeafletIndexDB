@@ -40,3 +40,15 @@ function openDB() {
     request.onerror = () => reject(request.error);
   });
 }
+
+export {
+  STORE_NAMES,
+  dbPut,
+  dbGet,
+  dbGetAll,
+  dbDelete,
+  dbClear,
+  dbAdd,
+  dbClearStore,
+  dbGetMedia
+};
